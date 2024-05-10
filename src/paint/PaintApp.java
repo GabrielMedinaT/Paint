@@ -12,9 +12,12 @@ public class PaintApp extends JFrame {
     private Color selectedColor = Color.BLACK;
     private List<Shape> shapes = new ArrayList<>();
     private List<Circle> circles = new ArrayList<>();
+    private List<Line> lines = new ArrayList<>();
     private int sides = 3; // Número de lados predeterminado
     private int startX, startY, endX, endY;
-    private JButton circleButton;
+    private JRadioButton circleRadioButton;
+    private JRadioButton lineRadioButton;
+    private JRadioButton polygonRadioButton;
 
     public PaintApp() {
         setTitle("Paint App");
@@ -34,6 +37,11 @@ public class PaintApp extends JFrame {
                 }
                 for (Circle circle : circles) {
                     g.drawOval(circle.x, circle.y, circle.radius * 2, circle.radius * 2);
+                }
+                if (lineRadioButton.isSelected()) {
+                    for (Line line : lines) {
+                        g.drawLine(line.startX, line.startY, line.endX, line.endY);
+                    }
                 }
                 if (sides == 0 && !circles.isEmpty()) {
                     // Dibujar círculo interactivamente mientras se arrastra el mouse
@@ -73,6 +81,16 @@ public class PaintApp extends JFrame {
                     int radius = Math.min(Math.abs(startX - endX), Math.abs(startY - endY)) / 2;
                     circles.add(new Circle(startX - radius, startY - radius, radius));
                 }
+                if (lineRadioButton.isSelected()) {
+                    if (lines.isEmpty()) {
+                        lines.add(new Line(startX, startY, endX, endY));
+                    } else {
+                        Line lastLine = lines.get(lines.size() - 1);
+                        if (!(lastLine.startX == startX && lastLine.startY == startY && lastLine.endX == endX && lastLine.endY == endY)) {
+                            lines.add(new Line(startX, startY, endX, endY));
+                        }
+                    }
+                }
                 drawingArea.repaint();
             }
         });
@@ -96,19 +114,56 @@ public class PaintApp extends JFrame {
         }
         sidesComboBox.setSelectedIndex(0); // Selección predeterminada
 
-        circleButton = new JButton("Dibujar Círculo");
-        circleButton.addActionListener(new ActionListener() {
+        circleRadioButton = new JRadioButton("Dibujar Círculo");
+        lineRadioButton = new JRadioButton("Dibujar Línea");
+        polygonRadioButton = new JRadioButton("Dibujar Polígono");
+
+        ButtonGroup buttonGroup = new ButtonGroup();
+        buttonGroup.add(circleRadioButton);
+        buttonGroup.add(lineRadioButton);
+        buttonGroup.add(polygonRadioButton);
+
+        circleRadioButton.addActionListener(new ActionListener() {
             public void actionPerformed(ActionEvent e) {
-                sides = 100; // Establecer el número de lados como 100 para dibujar un círculo
+                if (circleRadioButton.isSelected()) {
+                    sides = 100; // Establecer el número de lados como 100 para dibujar un círculo
+                    lineRadioButton.setSelected(false);
+                    polygonRadioButton.setSelected(false);
+                }
+                drawingArea.repaint();
+            }
+        });
+
+        lineRadioButton.addActionListener(new ActionListener() {
+            public void actionPerformed(ActionEvent e) {
+                if (lineRadioButton.isSelected()) {
+                    sides = 2; // Establecer el número de lados como 2 para dibujar una línea
+                    circleRadioButton.setSelected(false);
+                    polygonRadioButton.setSelected(false);
+                }
+                drawingArea.repaint();
+            }
+        });
+
+        polygonRadioButton.addActionListener(new ActionListener() {
+            public void actionPerformed(ActionEvent e) {
+                if (polygonRadioButton.isSelected()) {
+                    sides = (int) sidesComboBox.getSelectedItem(); // Establecer el número de lados según la selección del combo box
+                    circleRadioButton.setSelected(false);
+                    lineRadioButton.setSelected(false);
+                }
                 drawingArea.repaint();
             }
         });
 
         // Organización de la interfaz
         JPanel controlsPanel = new JPanel();
+        controlsPanel.add(new JLabel("Selecciona figura:"));
+        controlsPanel.add(circleRadioButton);
+        controlsPanel.add(lineRadioButton);
+        controlsPanel.add(polygonRadioButton);
         controlsPanel.add(new JLabel("Selecciona lados:"));
         controlsPanel.add(sidesComboBox);
-        controlsPanel.add(circleButton);
         controlsPanel.add(new JLabel("Select Color:"));
         JButton colorButton = new JButton("Change Color");
         colorButton.addActionListener(new ActionListener() {
@@ -125,14 +180,6 @@ public class PaintApp extends JFrame {
         contentPane.setLayout(new BorderLayout());
         contentPane.add(controlsPanel, BorderLayout.NORTH);
         contentPane.add(drawingArea, BorderLayout.CENTER);
-
-        // Manejadores de eventos
-        sidesComboBox.addActionListener(new ActionListener() {
-            public void actionPerformed(ActionEvent e) {
-                sides = (int) sidesComboBox.getSelectedItem();
-                drawingArea.repaint(); // Vuelve a dibujar el área de dibujo
-            }
-        });
     }
 
     class Shape {
@@ -162,6 +209,17 @@ public class PaintApp extends JFrame {
             this.x = x;
             this.y = y;
             this.radius = radius;
+        }
+    }
+
+    class Line {
+        int startX, startY, endX, endY;
+
+        public Line(int startX, int startY, int endX, int endY) {
+            this.startX = startX;
+            this.startY = startY;
+            this.endX = endX;
+            this.endY = endY;
         }
     }
 
